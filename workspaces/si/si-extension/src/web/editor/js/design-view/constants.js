@@ -124,8 +124,8 @@ define(function () {
         EXTENSION_INSTALLED_TEXT: "Installed",
         EXTENSION_NOT_INSTALLED_TEXT: "Not Installed",
         EXTENSION_PARTIALLY_INSTALLED_TEXT: "Partially Installed",
-        INSTALL: "Install",
-        UNINSTALL: "UnInstall"
+        ADD: "Add",
+        REMOVE: "Remove"
     };
 
     return constants;

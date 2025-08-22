@@ -34,13 +34,25 @@ export class ExtensionInstallerWebview extends WebviewBase {
                         break;
                     }
                     case UI_COMMANDS.INSTALL_DEPENDENCIES: {
+                        // TODO: Install iff the extension is not already installed.
                         const content = await client?.installDependencies(message.payload);
+                        
                         this.publishMessageToWebview(UI_COMMAND_RESPONSES.INSTALL_DEPENDENCIES, content);
                         break;
                     }
                     case UI_COMMANDS.UNINSTALL_DEPENDENCIES: {
                         const content = await client?.uninstallDependencies(message.payload);
                         this.publishMessageToWebview(UI_COMMAND_RESPONSES.UNINSTALL_DEPENDENCIES, content);
+                        break;
+                    }
+                    case UI_COMMANDS.ADD_EXTENSION_TO_PROJECT: {
+                        const content = await client?.addExtensionToProject(message.payload.extensionName, message.payload.projectRoot);
+                        this.publishMessageToWebview(UI_COMMAND_RESPONSES.ADD_EXTENSION_TO_PROJECT, content);
+                        break;
+                    }
+                    case UI_COMMANDS.GET_WORKSPACE_PATH: {
+                        const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+                        this.publishMessageToWebview(UI_COMMAND_RESPONSES.GET_WORKSPACE_PATH, { workspacePath });
                         break;
                     }
                     default:

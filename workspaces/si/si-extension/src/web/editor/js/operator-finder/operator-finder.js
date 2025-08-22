@@ -365,7 +365,7 @@ define(['jquery', 'lodash', 'log', 'remarkable',  'constants', 'alerts'],
                     self.handleExtensionInstallationInProgress,
                     handleCallback,
                     $(this),
-                    Constants.INSTALL,
+                    Constants.ADD,
                     innerSelf);
             });
 
@@ -383,7 +383,7 @@ define(['jquery', 'lodash', 'log', 'remarkable',  'constants', 'alerts'],
                     self.handleExtensionInstallationInProgress,
                     handleCallback,
                     $(this),
-                    Constants.UNINSTALL,
+                    Constants.REMOVE,
                     innerSelf);
             });
 

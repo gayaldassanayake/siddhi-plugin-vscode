@@ -166,4 +166,8 @@ export class ExtendedLanguageClient extends LanguageClient {
     public async installMissingExtensions(): Promise<SimulationConfigResponse> {
         return this.sendRequest("extensionInstaller/installMissingExtensions", {});
     }
+
+    public async addExtensionToProject(extensionName: string, projectRoot: string): Promise<SimulationConfigResponse> {
+        return this.sendRequest("extensionInstaller/addExtensionToProject", { extensionName, projectRoot });
+    }
 }

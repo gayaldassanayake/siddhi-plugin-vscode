@@ -13,6 +13,7 @@ import { activateDebugger } from "./debugger/activate";
 import { StateMachine } from "./stateMachine";
 import { RPCLayer } from './RPCLayer';
 import { extension } from "./SIExtensionContext";
+import { WorkspaceManager } from './workspaceManager';
 
 export async function activate(context: vscode.ExtensionContext) {
   extension.context = context;
@@ -20,4 +21,6 @@ export async function activate(context: vscode.ExtensionContext) {
   activateDebugger(context);
   activateVisualizer(context);
   StateMachine.initialize();
+  const workspaceManager = new WorkspaceManager(context);
+  workspaceManager.activate();
 }

@@ -65,14 +65,14 @@ define(['require', 'lodash', 'jquery', 'constants'],
                         case Constants.EXTENSION_INSTALLED:
                             // All the dependencies are installed.
                             status = Constants.EXTENSION_INSTALLED_TEXT;
-                            buttonActionText = Constants.UNINSTALL;
+                            buttonActionText = Constants.REMOVE;
                             break;
                         case Constants.EXTENSION_NOT_INSTALLED:
                             // None of the dependencies are installed.
                             status = Constants.EXTENSION_NOT_INSTALLED_TEXT;
                             if (this.isNonEmptyArray(autoDownloadable)) {
                                 // Auto downloadable dependencies are available. Allow to try installing them.
-                                buttonActionText = Constants.INSTALL;
+                                buttonActionText = Constants.ADD;
                             } else {
                                 // No auto downloadable dependency is available. Button action not applicable.
                                 buttonActionText = null;
@@ -88,15 +88,15 @@ define(['require', 'lodash', 'jquery', 'constants'],
                                 Installation failure in at least one auto downloadable dependency,
                                 will not be available for a retry.
                                 */
-                                buttonActionText = Constants.UNINSTALL;
+                                buttonActionText = Constants.REMOVE;
                             } else {
                                 // Partial because of previous failures in installing dependencies.
-                                buttonActionText = Constants.INSTALL;
+                                buttonActionText = Constants.ADD;
                             }
                             break;
                         default:
                             status = Constants.EXTENSION_NOT_INSTALLED_TEXT;
-                            buttonActionText = Constants.INSTALL;
+                            buttonActionText = Constants.ADD;
                     }
                     return {status: status, buttonActionText: buttonActionText};
                 },

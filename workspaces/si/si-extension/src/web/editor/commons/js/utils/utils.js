@@ -83,10 +83,10 @@ define(['require', 'jquery', 'constants'],
                 self.extensionInstallUninstallAlertModal.modal('hide');
                 var action = requestedActionText;
 
-                if (action === Constants.INSTALL) {
+                if (action === Constants.ADD) { // TODO: this should be add or install based on the project type.
                     self.performInstallOrUnInstall(
                         self.vscode, extension, app, handleLoading, handleCallback, callerObject, action, callerScope);
-                } else if (action === Constants.UNINSTALL) {
+                } else if (action === Constants.REMOVE) {
                     self.vscode.postMessage({
                         command: 'getDependencySharingExtensions',
                         payload: extension.extensionInfo.name
@@ -98,6 +98,8 @@ define(['require', 'jquery', 'constants'],
                             const payload = message.payload;
                             if (("doesShareDependencies" in payload)) {
                                 if (payload.doesShareDependencies) {
+                                    console.log(`Extension: ${extension.extensionInfo.name} shares dependencies with ` +
+                                        `other extensions: ${JSON.stringify(payload.sharesWith)}`);
                                     // Some dependencies are shared. Proceed or not based on user's selection.
                                     self.performDependencySharingUnInstallation(
                                         payload.sharesWith,
@@ -109,6 +111,7 @@ define(['require', 'jquery', 'constants'],
                                         action,
                                         callerScope);
                                 } else {
+                                    console.log(`No shared dependencies found for extension: ${extension.extensionInfo.name}`);
                                     // No dependencies are shared. Proceed with un-installation.
                                     self.performInstallOrUnInstall(
                                         self.vscode, extension, app, handleLoading, handleCallback, callerObject, action, callerScope);
@@ -206,6 +209,7 @@ define(['require', 'jquery', 'constants'],
             });
         };
 
+        // TODO: refactor this function. may be split into multiple functions.
         this.performInstallOrUnInstall = function (vscode, extension,
                                                    app,
                                                    handleLoading,
@@ -214,39 +218,91 @@ define(['require', 'jquery', 'constants'],
                                                    action,
                                                    callerScope) {
             // Wait until installation completes.
+            console.log(`Performing ${action} for extension: ${extension.extensionInfo.name} with handleLoading: ` +
+                `${handleLoading !== undefined}, handleCallback: ${handleCallback !== undefined}, callerObject: ` +
+                `${callerObject !== undefined}, callerScope: ${callerScope !== undefined}`);
+            
             if (handleLoading) {
-                var actionStatus = action + 'ing';
-                actionStatus = actionStatus.charAt(0).toUpperCase() + actionStatus.substr(1).toLowerCase();
+                var actionStatus = action.substring(0, action.length - 1) + 'ing'; // TODO: do this case by case. this is wrong - Add -> ading
+                actionStatus = actionStatus.charAt(0).toUpperCase() + actionStatus.substring(1).toLowerCase();
+                console.log(`Handling loading for action: ${actionStatus}`);
                 handleLoading(callerObject, extension, actionStatus, callerScope);
             }
-
-            if (action.toLowerCase() === 'install') {
+            let workspacePath = null;
+            this.vscode.postMessage({
+                command: 'getWorkspacePath'
+            });
+            window.addEventListener('message', event => {
+                const message = event.data;
+                if (message.command === 'getWorkspacePathResponse') {
+                    workspacePath = message.payload.workspacePath;
+                    
+                }
+            });
+            if (action.toLowerCase() === 'add') {
                 vscode.postMessage({
                     command: 'installDependencies',
                     payload: extension.extensionInfo.name
                 });
-            } else if (action.toLowerCase() === 'uninstall') {
+            } else if (action.toLowerCase() === 'remove') {
+                console.log(`Uninstalling extension: ${extension.extensionInfo.name}`);
                 vscode.postMessage({
                     command: 'uninstallDependencies',
                     payload: extension.extensionInfo.name
                 });
+                console.log(`Uninstalling extension complete: ${extension.extensionInfo.name}`);
             }
 
             window.addEventListener('message', event => {
                 const message = event.data;
-                if (message.command === 'installDependenciesResponse' || message.command === 'uninstallDependenciesResponse') {
-                    const payload = message.payload;
-                    if ("completed" in payload) {
-                        handleCallback(extension, payload.status, callerObject, payload, callerScope);
-                        app.utils.extensionStatusListener.markAsRestartRequired(extension);
-                        self.displayRestartPopup(extension, action);
-                    }
-                    else {
-                        var errMessage = `Unable to ${action.toLowerCase()} the extension. ` +
-                        `Please check editor console for further information.`;
-                        alerts.error(errMessage);
-                        throw errMessage;
-                    }
+                if (!message || !message.command) {
+                    console.error("Received message without command:", message);
+                    return;
+                }
+                const payload = message.payload;
+                switch (message.command) {
+                    case "installDependenciesResponse":
+                        console.log(`Received response for installDependencies: ${JSON.stringify(payload)}`);
+                        if ("completed" in payload) {
+                            console.log(`VSCode ${JSON.stringify(vscode)}`);
+                            vscode.postMessage({
+                                command: 'addExtensionToProject',
+                                payload: {
+                                    extensionName: extension.extensionInfo.name, 
+                                    projectRoot: workspacePath
+                                }
+                            });
+                        } else {
+                            console.error(`Received response for installDependenciesResponse: ${JSON.stringify(payload)}`);
+                            var errMessage = `Unable to install the extension. ` +
+                                `Please check editor console for further information.`; 
+                            console.error(errMessage);
+                            throw errMessage;
+                        }
+                        break;
+                    case "uninstallDependenciesResponse":
+                        if ("completed" in payload) {
+                            handleCallback(extension, payload.status, callerObject, payload, callerScope);
+                            app.utils.extensionStatusListener.markAsRestartRequired(extension);
+                            self.displayRestartPopup(extension, action);
+                        } else {
+                            var errMessage = `Unable to ${action.toLowerCase()} the extension. ` +
+                            `Please check editor console for further information.`; 
+                            alerts.error(errMessage);
+                            throw errMessage;
+                        }
+                        break;
+                    case "addExtensionToProjectResponse":
+                        if (payload.success === true) {
+                            app.utils.extensionStatusListener.markAsRestartRequired(extension);
+                            self.displayRestartPopup(extension, action);
+                        } else {
+                            console.error(`Received response for getExtensionStatusResponse: ${JSON.stringify(payload)}`);
+                            var errMessage = `Unable to add the extension. ` +
+                            `Please check editor console for further information.`; 
+                            alerts.error(errMessage);
+                            throw errMessage;
+                        }
                 }
             });
         };

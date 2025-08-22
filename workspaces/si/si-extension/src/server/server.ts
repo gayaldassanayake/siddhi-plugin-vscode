@@ -10,6 +10,7 @@
 import { ServerOptions } from "vscode-languageclient/node";
 import { debug, log } from "../utils/logger";
 import * as path from "path";
+import * as vscode from "vscode";
 import { getJavaHomeFromConfig } from "../utils/onboardingUtils";
 import { findLSJarPath, getLog4jConfigFile, getClassPath } from "../utils/utils";
 import * as fs from "fs";
@@ -28,7 +29,7 @@ export function getServerOptions(CARBON_HOME: string): ServerOptions {
     let executable: string = path.join(String(getJavaHomeFromConfig()), "bin", "java");
     let args: string[] = [...getClassPath(CARBON_HOME)];
 
-    if (process.env.LSDEBUG === "true") {
+    if (vscode.workspace.getConfiguration("siddhi").get("enableLanguageServer") === true) {
         args.push("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005,quiet=y,");
         debug("Language Server is starting in debug mode.");
     }

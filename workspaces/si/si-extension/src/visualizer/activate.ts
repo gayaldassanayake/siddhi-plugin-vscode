@@ -18,6 +18,9 @@ import { MACHINE_VIEW, EVENT_TYPE } from "@wso2/si-core";
 import { ExportResponse } from "@wso2/si-core";
 import * as path from "path";
 import { ExtensionInstallerWebview } from "./extension-installer-webview";
+import { createConfigFile } from "../utils/utils";
+import * as fs from "fs";
+import { debug, log } from "console";
 
 let simulatorVisualizerWebview: SimulatorVisualizerWebview | undefined;
 let diagramVisualizerWebview: DiagramVisualizerWebview | undefined;
@@ -238,12 +241,32 @@ export function activateVisualizer(context: vscode.ExtensionContext) {
                 return;
             }
             const extensionStatuses = await StateMachine.context().langClient?.getAllExtensionStatuses();
+            console.log("Extension statuses: ", extensionStatuses);
+            // TODO: look at the si.yaml (if exists), and pass the data to the webview.
+
+            // make sure the case of not having an si.yaml is handled.
             setTimeout(() => {
                 extensionInstallerWebview.publishMessageToWebview(
                     UI_COMMANDS.SEND_EXTENSION_STATUSES,
                     extensionStatuses
                 );
             }, 3000);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(VS_CODE_COMMANDS.CREATE_SI_YAML, async () => {
+            if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+                vscode.window.showErrorMessage("No workspace folder is open.");
+                return;
+            }
+            const folderPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            const filePath = path.join(folderPath, 'si.yaml');
+            if (fs.existsSync(filePath)) {
+                vscode.window.showInformationMessage("si.yaml file already exists in the workspace.");
+                return;
+            }
+            await createConfigFile(folderPath);
         })
     );
 }

@@ -17,7 +17,8 @@ export const VS_CODE_COMMANDS = {
     EVENT_SIMULATE: "SI.event.simulate",
     EXPORT_APP: "SI.export.app",
     EXPORT_TO_DOCKER: "SI.export.to.docker",
-    EXTENSION_INSTALLER: "SI.extension.installer"
+    EXTENSION_INSTALLER: "SI.extension.installer",
+    CREATE_SI_YAML: "SI.create.si.yaml"
 };
 
 export const UI_COMMANDS = {
@@ -44,7 +45,9 @@ export const UI_COMMANDS = {
     SEND_EXTENSION_STATUSES: "sendExtensionStatuses",
     DEPENDENCY_SHARING_EXTENSIONS: "getDependencySharingExtensions",
     INSTALL_DEPENDENCIES: "installDependencies",
-    UNINSTALL_DEPENDENCIES: "uninstallDependencies"
+    UNINSTALL_DEPENDENCIES: "uninstallDependencies",
+    ADD_EXTENSION_TO_PROJECT: "addExtensionToProject",
+    GET_WORKSPACE_PATH: "getWorkspacePath"
 }
 
 export const UI_COMMAND_RESPONSES = {
@@ -66,7 +69,10 @@ export const UI_COMMAND_RESPONSES = {
     RETRIEVE_CSV_FILE_NAMES: "retrieveCSVFileNamesResponse",
     DEPENDENCY_SHARING_EXTENSIONS: "getDependencySharingExtensionsResponse",
     INSTALL_DEPENDENCIES: "installDependenciesResponse",
-    UNINSTALL_DEPENDENCIES: "uninstallDependenciesResponse"
+    UNINSTALL_DEPENDENCIES: "uninstallDependenciesResponse",
+    GET_EXTENSION_STATUS: "getExtensionStatusResponse",
+    ADD_EXTENSION_TO_PROJECT: "addExtensionToProjectResponse",
+    GET_WORKSPACE_PATH: "getWorkspacePathResponse"
 }
 
 export const DEFAULT_PROJECT_VERSION = "1.0.0";
