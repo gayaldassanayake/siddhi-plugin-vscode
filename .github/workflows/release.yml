@@ -11,12 +11,34 @@ on:
         type: string
         description: 'Override prerelease base version (e.g., 0.99 for major bump to 1.0.0). Format: major.minor'
         required: false
+      runIntegratorE2E:
+        type: boolean
+        description: 'Run the Integrator E2E check before publishing; a failed check blocks the release'
+        default: false
+      e2ePackUrl:
+        type: string
+        description: 'URL of the SI pack .zip for the E2E check (required when runIntegratorE2E is true)'
+        required: false
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      stable_version: ${{ steps.version.outputs.stable_version }}
 
     steps:
+    - name: Validate inputs
+      env:
+        RUN_E2E: ${{ inputs.runIntegratorE2E }}
+        PACK_URL: ${{ inputs.e2ePackUrl }}
+      run: |
+        if [ "$RUN_E2E" = "true" ] && [ -z "$PACK_URL" ]; then
+          echo "e2ePackUrl is required when runIntegratorE2E is true" >&2
+          exit 1
+        fi
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -41,6 +63,7 @@ jobs:
         cd workspaces/si/si-extension
         version=$(node -p "require('./package.json').version")
         echo "STABLE_VERSION=$version" >> $GITHUB_ENV
+        echo "stable_version=$version" >> $GITHUB_OUTPUT
 
         IFS='.' read -r major minor patch <<< "$version"
 
@@ -86,6 +109,36 @@ jobs:
       with:
         name: streaming-integrator
         path: workspaces/si/si-extension/streaming-integrator-${{ env.VERSION }}.vsix
+
+  integrator-e2e:
+    needs: build
+    if: ${{ inputs.runIntegratorE2E }}
+    uses: ./.github/workflows/integrator-e2e.yml
+    with:
+      pack_url: ${{ inputs.e2ePackUrl }}
+      vsix_artifact: streaming-integrator
+
+  publish:
+    needs: [build, integrator-e2e]
+    if: ${{ !cancelled() && needs.build.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.integrator-e2e.result) }}
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+      STABLE_VERSION: ${{ needs.build.outputs.stable_version }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.WSO2_INTEGRATION_BOT_TOKEN }}
+        fetch-depth: 0
+
+    - name: Download release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: streaming-integrator
+        path: workspaces/si/si-extension
 
     - name: Create GitHub Release
       env:
